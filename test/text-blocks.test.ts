@@ -60,15 +60,13 @@ Spanish text`;
     expect((result.pages[0].elements[0] as TextBlockElement).content.en).toBe(
       "<p>English text</p>"
     );
-    console.log(JSON.stringify(result, null, 2));
-
     expect((result.pages[0].elements[0] as TextBlockElement).content.fr).toBe(
       "<p>French text</p>"
     );
     expect((result.pages[0].elements[0] as TextBlockElement).content.es).toBe(
       "<p>Spanish text</p>"
     );
-    expect(Object.keys(result.pages[0].elements)).toHaveLength(3);
+    expect(result.pages[0].elements.length).toBe(3);
   });
 
   it("should handle multiple paragraphs correctly", () => {

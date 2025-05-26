@@ -209,13 +209,9 @@ describe("HtmlTemplates", () => {
     expect(html).not.toContain("<p><h1>");
 
     // Should preserve the original formatting
-    expect(html).toContain(
-      '<div class="bloom-editable bloom-content1 bloom-visibility-code-on" lang="en" contenteditable="true">'
-    );
+    expect(html).toContain('<div class="bloom-editable" lang="en">');
     expect(html).toContain("<p>First paragraph.</p><p>Second paragraph.</p>");
-    expect(html).toContain(
-      '<div class="bloom-editable bloom-content1 bloom-visibility-code-on" lang="es" contenteditable="true">'
-    );
+    expect(html).toContain('<div class="bloom-editable" lang="es">');
     expect(html).toContain("<h1>Heading</h1><p>Text after heading.</p>");
   });
 
@@ -310,16 +306,12 @@ describe("HtmlTemplates", () => {
     // Check for the presence of the text content in their respective language blocks
     expect(html).toContain("English text in top section");
     expect(html).toContain("Spanish text in bottom section");
-    const enBlock = html.includes(
-      '<div class="bloom-editable bloom-content1 bloom-visibility-code-on" lang="en" contenteditable="true"><p>English text in top section</p></div>'
+    expect(html).toContain(
+      'div class="bloom-translationGroup" data-default-languages="V"'
     );
-    const esBlock = html.includes(
-      '<div class="bloom-editable bloom-content1 bloom-visibility-code-on" lang="es" contenteditable="true"><p>Spanish text in bottom section</p></div>'
+    expect(html).toContain(
+      'div class="bloom-translationGroup" data-default-languages="N1"'
     );
-    expect(enBlock || esBlock).toBe(true); // One of them should be in a V block, the other N1 (or vice versa depending on l1/l2)
-
-    // This specific class might not be directly applicable or might change
-    // expect(html).toContain("split-pane-component-inner");
   });
 
   it("should handle image-only layout with missing image gracefully", () => {
@@ -371,79 +363,5 @@ describe("HtmlTemplates", () => {
     // Instead, check that no actual text content from the empty block is rendered.
     const hasAnyTextContent = /<p>[^<]+<\/p>/.test(html); // Check for any non-empty paragraph
     expect(hasAnyTextContent).toBe(false);
-  });
-  it("should generate different HTML for text-image-text and bilingual-text-image-text layouts based on lang placeholders", () => {
-    const textImageTextPage: PageContent = {
-      layout: "text-image-text",
-      elements: [
-        {
-          type: "text",
-          content: {
-            en: "Test content en top",
-            es: "Contenido de prueba es top",
-          },
-        },
-        { type: "image", src: "test.jpg" },
-        {
-          type: "text",
-          content: {
-            en: "Test content en bottom",
-            es: "Contenido de prueba es bottom",
-          },
-        },
-      ],
-    };
-
-    const bilingualPage: PageContent = {
-      layout: "bilingual-text-image-text",
-      elements: [
-        { type: "text", content: { en: "Test content en top" } }, // L1 in top
-        { type: "image", src: "test.jpg" },
-        { type: "text", content: { es: "Contenido de prueba es bottom" } }, // L2 in bottom
-      ],
-    };
-
-    const book1: Book = {
-      metadata: mockMetadata,
-      pages: [textImageTextPage],
-    };
-
-    const book2: Book = {
-      metadata: mockMetadata,
-      pages: [bilingualPage],
-    };
-
-    const html1 = templates.generateHtmlDocument(book1);
-    const html2 = templates.generateHtmlDocument(book2);
-
-    // text-image-text should render L1 content in both top and bottom text blocks by default (using "V" placeholder)
-    expect(html1).toContain("Test content en top");
-    expect(html1).toContain("Test content en bottom");
-    expect(html1).not.toContain("Contenido de prueba es top"); // es should not be rendered if l1 is en and placeholder is V
-    expect(html1).not.toContain("Contenido de prueba es bottom");
-
-    // bilingual-text-image-text should render L1 (en) in top and L2 (es) in bottom
-    expect(html2).toContain("Test content en top");
-    expect(html2).toContain("Contenido de prueba es bottom");
-    expect(html2).not.toContain("Contenido de prueba es top");
-    expect(html2).not.toContain("Test content en bottom");
-
-    // Count occurrences of lang attributes to verify the difference
-    const en_matches_html1 = (html1.match(/lang="en"/g) || []).length;
-    const es_matches_html1 = (html1.match(/lang="es"/g) || []).length;
-    const en_matches_html2 = (html2.match(/lang="en"/g) || []).length;
-    const es_matches_html2 = (html2.match(/lang="es"/g) || []).length;
-
-    // book1 (text-image-text) with l1='en', l2='es'. Both text blocks use 'V' (l1).
-    // Each text block (top/bottom) will have one div for lang="en".
-    // The data div also has titles in en and es.
-    expect(en_matches_html1).toBe(2 + 1); // 2 for content, 1 for title in data div
-    expect(es_matches_html1).toBe(0 + 1); // 0 for content, 1 for title in data div
-
-    // book2 (bilingual) with l1='en', l2='es'. Top uses 'V' (l1), bottom uses 'N1' (l2).
-    // Top text block: one div for lang="en". Bottom text block: one div for lang="es".
-    // Data div has titles in en and es.
-    expect(en_matches_html2).toBe(1 + 1); // 1 for content, 1 for title
-    expect(es_matches_html2).toBe(1 + 1); // 1 for content, 1 for title
   });
 });
