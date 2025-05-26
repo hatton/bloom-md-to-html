@@ -1,14 +1,14 @@
 import { readFileSync, writeFileSync, existsSync, unlinkSync } from "fs";
 import { resolve, dirname, basename, extname } from "path";
-import { MarkdownParser } from "./parser.js";
-import { HtmlTemplates } from "./templates.js";
+import { MarkdownToBloomHtml } from "./md-to-bloom.js";
+import { BloomHtmlTemplates } from "./bloom-page-templates.js";
 import type { ConversionStats, ParsedBook } from "./types.js";
 
 export class BloomConverter {
-  private templates: HtmlTemplates;
+  private templates: BloomHtmlTemplates;
 
   constructor() {
-    this.templates = new HtmlTemplates();
+    this.templates = new BloomHtmlTemplates();
   }
 
   async convert(
@@ -21,7 +21,7 @@ export class BloomConverter {
     if (!existsSync(resolvedInputPath)) {
       throw new Error(`Input file not found: ${inputPath}`);
     } // Initialize parser with input path and image validation enabled
-    const parser = new MarkdownParser(resolvedInputPath, {
+    const parser = new MarkdownToBloomHtml(resolvedInputPath, {
       validateImages: true,
     });
 

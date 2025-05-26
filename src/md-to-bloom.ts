@@ -8,7 +8,7 @@ import type {
 import { existsSync } from "fs";
 import { dirname, join } from "path";
 
-export class MarkdownParser {
+export class MarkdownToBloomHtml {
   private inputPath?: string;
   private validateImages: boolean;
   private errors: ValidationError[] = [];

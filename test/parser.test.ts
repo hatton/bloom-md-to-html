@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { MarkdownParser } from "../src/parser.js";
+import { MarkdownToBloomHtml } from "../src/md-to-bloom.js";
 
 describe("MarkdownParser", () => {
   it("should parse valid frontmatter", () => {
@@ -20,7 +20,7 @@ Hello world
 <!-- lang=es -->
 Hola mundo`;
 
-    const parser = new MarkdownParser();
+    const parser = new MarkdownToBloomHtml();
     const result = parser.parse(content);
 
     expect(result.metadata.allTitles.en).toBe("Test Book");
@@ -57,7 +57,7 @@ Text before image
 <!-- lang=en -->
 Text only page`;
 
-    const parser = new MarkdownParser();
+    const parser = new MarkdownToBloomHtml();
     const result = parser.parse(content);
 
     expect(result.pages).toHaveLength(3);
@@ -81,7 +81,7 @@ Here's a [link](https://example.com).
 Line one
 Line two`;
 
-    const parser = new MarkdownParser();
+    const parser = new MarkdownToBloomHtml();
     const result = parser.parse(content);
 
     const htmlText = result.pages[0].textBlocks.en;
@@ -101,7 +101,7 @@ allTitles:
 <!-- lang=en -->
 Test content`;
 
-    const parser = new MarkdownParser();
+    const parser = new MarkdownToBloomHtml();
 
     expect(() => parser.parse(content)).toThrow("Validation failed");
   });
@@ -120,7 +120,7 @@ l1: en
 <!-- lang=en -->
 Text with image that doesn't exist on disk`;
 
-    const parser = new MarkdownParser();
+    const parser = new MarkdownToBloomHtml();
     const result = parser.parse(content);
 
     expect(result.pages).toHaveLength(1);
@@ -157,7 +157,7 @@ French text
 <!-- lang=es -->
 Spanish text`;
 
-    const parser = new MarkdownParser();
+    const parser = new MarkdownToBloomHtml();
     const result = parser.parse(content);
 
     expect(result.pages).toHaveLength(1);
@@ -188,7 +188,7 @@ First page
 <!-- lang=en -->
 Third page`;
 
-    const parser = new MarkdownParser();
+    const parser = new MarkdownToBloomHtml();
     const result = parser.parse(content);
 
     // Empty pages should be filtered out

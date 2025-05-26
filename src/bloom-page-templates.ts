@@ -2,7 +2,7 @@ import type { BookMetadata, PageContent, ParsedBook } from "./types.js";
 import { mapLicense } from "./licenses.js";
 import escapeHtml from "escape-html";
 
-export class HtmlTemplates {
+export class BloomHtmlTemplates {
   generateHtmlDocument(book: ParsedBook): string {
     return `<!doctype html>
 <html>

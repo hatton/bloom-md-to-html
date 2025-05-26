@@ -1,9 +1,9 @@
 import { describe, it, expect } from "bun:test";
-import { HtmlTemplates } from "../src/templates.js";
+import { BloomHtmlTemplates } from "../src/bloom-page-templates.js";
 import type { BookMetadata, PageContent, ParsedBook } from "../src/types.js";
 
 describe("HtmlTemplates", () => {
-  const templates = new HtmlTemplates();
+  const templates = new BloomHtmlTemplates();
 
   const mockMetadata: BookMetadata = {
     allTitles: { en: "Test Book", es: "Libro de Prueba" },
