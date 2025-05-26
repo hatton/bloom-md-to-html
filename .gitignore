@@ -175,3 +175,5 @@ dist
 .DS_Store
 
 *.exe
+
+test-inputs/mixtec tiger/mixtex-tiger.htm

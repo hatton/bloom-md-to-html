@@ -66,7 +66,10 @@ export class BloomConverter {
 
   private getOutputPath(inputPath: string): string {
     const dir = dirname(inputPath);
-    const name = basename(inputPath, extname(inputPath));
+    const name = basename(inputPath, extname(inputPath)).replace(
+      "-enriched",
+      ""
+    );
     return resolve(dir, `${name}.htm`);
   }
 
