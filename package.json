@@ -1,0 +1,27 @@
+{
+  "name": "bloom-md-to-html",
+  "version": "1.0.0",
+  "description": "Convert Markdown files to Bloom HTML format",
+  "main": "index.ts",
+  "module": "index.ts",
+  "type": "module",
+  "bin": {
+    "bloom-convert": "./index.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "build": "bun build index.ts --outdir ./dist",
+    "start": "bun run index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/js-yaml": "^4.0.9"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "commander": "^14.0.0",
+    "js-yaml": "^4.1.0"
+  }
+}

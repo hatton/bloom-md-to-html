@@ -1,4 +1,4 @@
-# Bloom Markdown Converter
+# Bloom Markdown To HTML Converter
 
 A command-line tool to convert specially formatted Markdown files into Bloom HTML format for creating digital books.
 
@@ -15,23 +15,26 @@ A command-line tool to convert specially formatted Markdown files into Bloom HTM
 ## Installation
 
 ```bash
-cd bloom-converter
+cd bloom-md-to-html
 bun install
 ```
 
 ## Usage
 
 ### Basic conversion
+
 ```bash
 bun run index.ts input.md
 ```
 
 ### Validate without converting
+
 ```bash
 bun run index.ts input.md --validate
 ```
 
 ### Help
+
 ```bash
 bun run index.ts --help
 ```
@@ -57,9 +60,11 @@ isbn: "978-0123456789"
 ---
 
 <!-- lang=en -->
+
 English text for page 1
 
 <!-- lang=es -->
+
 Spanish text for page 1
 
 <!-- page-break -->
@@ -67,17 +72,21 @@ Spanish text for page 1
 ![Image](image.jpg)
 
 <!-- lang=en -->
+
 English text for page 2 (image above)
 
 <!-- lang=es -->
+
 Spanish text for page 2 (image above)
 
 <!-- page-break -->
 
 <!-- lang=en -->
+
 English text for page 3
 
 <!-- lang=es -->
+
 Spanish text for page 3
 
 ![Image](image2.jpg)
@@ -99,6 +108,7 @@ Spanish text for page 3
 ## License Mapping
 
 The following licenses are automatically mapped to URLs:
+
 - CC-BY, CC-BY-SA, CC-BY-ND, CC-BY-NC, CC-BY-NC-SA, CC-BY-NC-ND, CC0
 
 Custom licenses starting with `http://` or `https://` are used as-is.
