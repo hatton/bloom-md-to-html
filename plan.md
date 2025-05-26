@@ -1,19 +1,28 @@
 # Detailed Conversion Plan for Markdown to Bloom HTML CLI
 
+## Project Status: ✅ COMPLETED
+
+This document describes the implementation plan for a command-line tool that converts specially formatted Markdown files into Bloom HTML format for creating digital books.
+
 ## 1. **Project Structure**
 
 ```
-bloom-converter/
+bloom-md-to-html/
 ├── src/
-│   ├── index.ts              # CLI entry point
-│   ├── parser.ts             # Markdown parser
-│   ├── converter.ts          # Main conversion logic
+│   ├── parser.ts             # Markdown parser with flexible file/content handling
+│   ├── converter.ts          # Main conversion logic for CLI
 │   ├── templates.ts          # HTML template generators
-│   ├── licenses.ts           # License mapping
+│   ├── licenses.ts           # License mapping utilities
 │   └── types.ts              # TypeScript interfaces
+├── test/
+│   ├── parser.test.ts        # Parser tests using content strings
+│   ├── templates.test.ts     # Template generation tests
+│   └── licenses.test.ts      # License mapping tests
+├── index.ts                  # CLI entry point
 ├── package.json
 ├── tsconfig.json
-└── README.md
+├── README.md
+└── plan.md                   # This file
 ```
 
 ## 2. **Data Structures & Types**
@@ -40,17 +49,45 @@ interface ParsedBook {
   metadata: BookMetadata;
   pages: PageContent[];
 }
+
+interface ValidationError {
+  type: "error" | "warning";
+  message: string;
+  line?: number;
+}
+
+interface ConversionStats {
+  pages: number;
+  languages: string[];
+  images: number;
+  layouts: Record<string, number>;
+}
 ```
 
-## 3. **Parsing Algorithm**
+## 3. **Parser Implementation**
 
-### 3.1 YAML Frontmatter Parsing
+### 3.1 Flexible Constructor Design
 
-- Extract YAML frontmatter using a YAML parser
+The `MarkdownParser` class supports both file-based and content-based parsing:
+
+```typescript
+class MarkdownParser {
+  constructor(inputPath?: string, options: { validateImages?: boolean } = {});
+}
+```
+
+- **For CLI usage**: Pass `inputPath` with `validateImages: true` (default)
+- **For testing**: Pass no arguments or `validateImages: false`
+- **For unit testing**: Work with pure content strings without file dependencies
+
+### 3.2 YAML Frontmatter Parsing
+
+- Extract YAML frontmatter using js-yaml parser
 - Validate required fields (allTitles, languages, l1)
 - Store metadata in BookMetadata structure
+- Throw validation errors for missing required fields
 
-### 3.2 Content Parsing Logic
+### 3.3 Content Parsing Logic
 
 1. **Split content by `<!-- page-break -->`** to identify pages
 2. **For each page section:**
@@ -65,12 +102,18 @@ interface ParsedBook {
 - **Text-top-image-bottom**: Image appears after `<!-- lang=xx -->` comments and text
 - **Text-only**: No images present
 
-### 3.3 Content Extraction
+### 3.4 Content Extraction
 
 - Extract text between `<!-- lang=xx -->` and next comment/page-break
 - Trim whitespace and empty lines
 - Convert markdown formatting to HTML (bold, italic, links, etc.)
 - Store in language-keyed object
+
+### 3.5 Image Validation Strategy
+
+- **CLI Mode**: Images are validated to exist on disk
+- **Test Mode**: Image validation is skipped for simplicity
+- **Parser Flexibility**: Conditional validation based on constructor options
 
 ## 4. **License Mapping System**
 
@@ -180,24 +223,33 @@ function generateHtmlDocument(book: ParsedBook): string {
 ### 6.1 Command Structure
 
 ```bash
-bun bloom-convert [input.md] [options]
+bun run index.ts [input.md] [options]
+# or after building:
+bloom-convert [input.md] [options]
 ```
 
 ### 6.2 Options
 
 - `--validate, -v`: Validate input without converting
-- `--help, -h`: Show help
-- `--version`: Show version
+- `--help, -h`: Show help information
+- `--version`: Show version number
 
-**Note:** Output file is automatically generated in the same directory as input with `.htm` extension. Existing output files are deleted before conversion.
+### 6.3 Features
 
-### 6.3 Error Handling
+- **Automatic output naming**: `input.md` → `input.htm`
+- **File overwriting**: Existing output files are automatically replaced
+- **Image validation**: CLI validates that referenced images exist on disk
+- **Warning reporting**: Shows warnings for missing images or other issues
+- **Statistics reporting**: Displays conversion statistics after completion
+
+### 6.4 Error Handling
 
 - Validate input file exists and is readable
 - Validate YAML frontmatter structure
 - Check for required metadata fields
 - Warn about missing language content
-- Validate image file references exist
+- **CLI-only**: Validate image file references exist on disk
+- Provide clear error messages with validation details
 
 ## 7. **Processing Flow**
 
@@ -223,8 +275,9 @@ bun bloom-convert [input.md] [options]
 
 - **Required frontmatter:** allTitles, languages, l1
 - **Language consistency:** All lang codes in content must exist in languages metadata
-- **Image validation:** Referenced images should exist in same directory
+- **Image validation (CLI only):** Referenced images should exist in same directory
 - **Layout validation:** Each page must have at least one language text block
+- **Empty page handling:** Pages without content are automatically filtered out
 
 ## 9. **Future Extensibility**
 
@@ -236,6 +289,7 @@ bun bloom-convert [input.md] [options]
 ## 10. **Implementation Details**
 
 ### 10.1 Technology Stack
+
 - **Runtime**: Bun
 - **CLI Framework**: Commander.js
 - **YAML Parser**: js-yaml
@@ -243,31 +297,37 @@ bun bloom-convert [input.md] [options]
 - **Testing**: Bun's built-in test runner
 
 ### 10.2 Dependencies
+
 - `commander`: CLI argument parsing
 - `js-yaml`: YAML frontmatter parsing
 - `@types/js-yaml`: TypeScript types for yaml
 
 ### 10.3 File Output Behavior
+
 - Output files are generated in the same directory as input
 - Extension is automatically changed to `.htm`
 - Existing output files are deleted before conversion
 - No user input required for output path
 
 ### 10.4 Markdown Processing
+
 - Convert basic markdown formatting to HTML:
   - **Bold** (`**text**`) → `<strong>text</strong>`
-  - *Italic* (`*text*`) → `<em>text</em>`
+  - _Italic_ (`*text*`) → `<em>text</em>`
   - Links (`[text](url)`) → `<a href="url">text</a>`
   - Line breaks preserved as `<br>` tags
 
 ### 10.5 Statistics Reporting
+
 After successful conversion, display:
+
 - Number of pages processed
 - Languages detected and used
 - Number of images referenced
 - Layout types used
 
 ### 10.6 Testing Strategy
+
 - Unit tests for each module using Bun test
 - Integration tests with sample markdown files
 - Validation tests for error conditions
