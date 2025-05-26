@@ -21,7 +21,7 @@ This is the first and only page.`;
 
     expect(result.pages).toHaveLength(1);
     expect(result.pages[0].textBlocks.en).toBe(
-      "This is the first and only page."
+      "<p>This is the first and only page.</p>"
     );
   });
 
@@ -40,8 +40,12 @@ This is the second page.`;
     const result = parser.parse(content);
 
     expect(result.pages).toHaveLength(2);
-    expect(result.pages[0].textBlocks.en).toBe("This is the first page.");
-    expect(result.pages[1].textBlocks.en).toBe("This is the second page.");
+    expect(result.pages[0].textBlocks.en).toBe(
+      "<p>This is the first page.</p>"
+    );
+    expect(result.pages[1].textBlocks.en).toBe(
+      "<p>This is the second page.</p>"
+    );
   });
 
   it("should create a single page when a pagebreak is at the beginning", () => {
@@ -57,7 +61,7 @@ This is a single page despite the leading pagebreak.`;
 
     expect(result.pages).toHaveLength(1);
     expect(result.pages[0].textBlocks.en).toBe(
-      "This is a single page despite the leading pagebreak."
+      "<p>This is a single page despite the leading pagebreak.</p>"
     );
   });
 
@@ -74,7 +78,7 @@ This is a single page despite the trailing pagebreak.
 
     expect(result.pages).toHaveLength(1);
     expect(result.pages[0].textBlocks.en).toBe(
-      "This is a single page despite the trailing pagebreak."
+      "<p>This is a single page despite the trailing pagebreak.</p>"
     );
   });
 
@@ -102,10 +106,10 @@ Content for the second actual page.
 
     expect(result.pages).toHaveLength(2);
     expect(result.pages[0].textBlocks.en).toBe(
-      "Content for the first actual page."
+      "<p>Content for the first actual page.</p>"
     );
     expect(result.pages[1].textBlocks.en).toBe(
-      "Content for the second actual page."
+      "<p>Content for the second actual page.</p>"
     );
   });
 
@@ -126,8 +130,8 @@ Page 2`;
     const result = parser.parse(content);
     // This behavior is based on the "empty pages should be filtered out" test in md-to-bloom.test.ts
     expect(result.pages).toHaveLength(2);
-    expect(result.pages[0].textBlocks.en).toBe("Page 1");
-    expect(result.pages[1].textBlocks.en).toBe("Page 2");
+    expect(result.pages[0].textBlocks.en).toBe("<p>Page 1</p>");
+    expect(result.pages[1].textBlocks.en).toBe("<p>Page 2</p>");
   });
 
   it("should handle content only before the first pagebreak", () => {
@@ -140,7 +144,7 @@ Only content is here.
     const parser = new MarkdownToBloomHtml();
     const result = parser.parse(content);
     expect(result.pages).toHaveLength(1);
-    expect(result.pages[0].textBlocks.en).toBe("Only content is here.");
+    expect(result.pages[0].textBlocks.en).toBe("<p>Only content is here.</p>");
   });
 
   it("should handle content only after the last pagebreak", () => {
@@ -153,6 +157,6 @@ Only content is here.`;
     const parser = new MarkdownToBloomHtml();
     const result = parser.parse(content);
     expect(result.pages).toHaveLength(1);
-    expect(result.pages[0].textBlocks.en).toBe("Only content is here.");
+    expect(result.pages[0].textBlocks.en).toBe("<p>Only content is here.</p>");
   });
 });

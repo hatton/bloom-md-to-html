@@ -195,18 +195,22 @@ export class MarkdownToBloomHtml {
 
     return page;
   }
-
   private convertMarkdownToHtml(text: string): string {
     return (
       text
+        // h1 headings: # Heading -> <h1>Heading</h1>
+        .replace(/^# (.*?)$/gm, "<h1>$1</h1>")
+        // h2 headings: ## Heading -> <h2>Heading</h2>
+        .replace(/^## (.*?)$/gm, "<h2>$1</h2>")
         // Bold text: **text** -> <strong>text</strong>
         .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
         // Italic text: *text* -> <em>text</em>
         .replace(/\*([^*]+?)\*/g, "<em>$1</em>")
         // Links: [text](url) -> <a href="url">text</a>
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-        // Line breaks: preserve line breaks as <br>
-        .replace(/\n/g, "<br>")
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>') // Split text into paragraphs and wrap each in <p> tags
+        .split(/\n\s*\n/)
+        .map((para) => `<p>${para.replace(/\n/g, " ").trim()}</p>`)
+        .join("")
     );
   }
 

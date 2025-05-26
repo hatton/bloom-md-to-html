@@ -27,8 +27,8 @@ Hola mundo`;
     expect(result.metadata.l1).toBe("en");
     expect(result.metadata.l2).toBe("es");
     expect(result.pages).toHaveLength(1);
-    expect(result.pages[0].textBlocks.en).toBe("Hello world");
-    expect(result.pages[0].textBlocks.es).toBe("Hola mundo");
+    expect(result.pages[0].textBlocks.en).toBe("<p>Hello world</p>");
+    expect(result.pages[0].textBlocks.es).toBe("<p>Hola mundo</p>");
   });
 
   it("should detect page layouts correctly", () => {
@@ -88,7 +88,7 @@ Line two`;
     expect(htmlText).toContain("<strong>bold</strong>");
     expect(htmlText).toContain("<em>italic</em>");
     expect(htmlText).toContain('<a href="https://example.com">link</a>');
-    expect(htmlText).toContain("<br>");
+    expect(htmlText).toContain("<p>");
   });
 
   it("should validate required metadata fields", () => {
@@ -127,7 +127,7 @@ Text with image that doesn't exist on disk`;
     expect(result.pages[0].layout).toBe("image-top-text-bottom");
     expect(result.pages[0].image).toBe("nonexistent-image.png");
     expect(result.pages[0].textBlocks.en).toBe(
-      "Text with image that doesn't exist on disk"
+      "<p>Text with image that doesn't exist on disk</p>"
     );
 
     // Should not throw any errors even though image doesn't exist
@@ -161,9 +161,9 @@ Spanish text`;
     const result = parser.parse(content);
 
     expect(result.pages).toHaveLength(1);
-    expect(result.pages[0].textBlocks.en).toBe("English text");
-    expect(result.pages[0].textBlocks.fr).toBe("French text");
-    expect(result.pages[0].textBlocks.es).toBe("Spanish text");
+    expect(result.pages[0].textBlocks.en).toBe("<p>English text</p>");
+    expect(result.pages[0].textBlocks.fr).toBe("<p>French text</p>");
+    expect(result.pages[0].textBlocks.es).toBe("<p>Spanish text</p>");
     expect(Object.keys(result.pages[0].textBlocks)).toHaveLength(3);
   });
 
@@ -193,7 +193,7 @@ Third page`;
 
     // Empty pages should be filtered out
     expect(result.pages).toHaveLength(2);
-    expect(result.pages[0].textBlocks.en).toBe("First page");
-    expect(result.pages[1].textBlocks.en).toBe("Third page");
+    expect(result.pages[0].textBlocks.en).toBe("<p>First page</p>");
+    expect(result.pages[1].textBlocks.en).toBe("<p>Third page</p>");
   });
 });
