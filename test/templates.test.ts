@@ -119,7 +119,6 @@ describe("HtmlTemplates", () => {
     expect(html).toContain("<strong>bold</strong>");
     expect(html).toContain("<em>italic</em>");
   });
-
   it("should preserve problematic characters in text blocks", () => {
     const mockPage: PageContent = {
       layout: "text-only",
@@ -139,5 +138,33 @@ describe("HtmlTemplates", () => {
     expect(html).toContain(
       "Text with & < > \" ' characters and <div>raw html</div>"
     );
+  });
+
+  it("should not double-wrap text content that already contains paragraph tags", () => {
+    const mockPage: PageContent = {
+      layout: "text-only",
+      textBlocks: {
+        en: "<p>First paragraph.</p><p>Second paragraph.</p>",
+        es: "<h1>Heading</h1><p>Text after heading.</p>",
+      },
+    };
+
+    const book: ParsedBook = {
+      metadata: mockMetadata,
+      pages: [mockPage],
+    };
+
+    const html = templates.generateHtmlDocument(book);
+
+    // Should not have double paragraph tags
+    expect(html).not.toContain("<p><p>");
+    expect(html).not.toContain("</p></p>");
+    expect(html).not.toContain("<p><h1>");
+    
+    // Should preserve the original formatting
+    expect(html).toContain('<div class="bloom-editable" lang="en">');
+    expect(html).toContain("<p>First paragraph.</p><p>Second paragraph.</p>");
+    expect(html).toContain('<div class="bloom-editable" lang="es">');
+    expect(html).toContain("<h1>Heading</h1><p>Text after heading.</p>");
   });
 });

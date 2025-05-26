@@ -196,22 +196,43 @@ export class MarkdownToBloomHtml {
     return page;
   }
   private convertMarkdownToHtml(text: string): string {
-    return (
-      text
-        // h1 headings: # Heading -> <h1>Heading</h1>
-        .replace(/^# (.*?)$/gm, "<h1>$1</h1>")
-        // h2 headings: ## Heading -> <h2>Heading</h2>
-        .replace(/^## (.*?)$/gm, "<h2>$1</h2>")
-        // Bold text: **text** -> <strong>text</strong>
-        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        // Italic text: *text* -> <em>text</em>
-        .replace(/\*([^*]+?)\*/g, "<em>$1</em>")
-        // Links: [text](url) -> <a href="url">text</a>
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>') // Split text into paragraphs and wrap each in <p> tags
-        .split(/\n\s*\n/)
-        .map((para) => `<p>${para.replace(/\n/g, " ").trim()}</p>`)
-        .join("")
-    );
+    // Apply block transformations first (headings)
+    let html = text
+      .replace(/^# (.*?)$/gm, "<h1>$1</h1>")
+      .replace(/^## (.*?)$/gm, "<h2>$1</h2>");
+    // Add other heading levels if needed H3-H6: .replace(/^### (.*?)$/gm, "<h3>$1</h3>") etc.
+
+    // Then apply inline transformations to the whole result
+    html = html
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*([^*]+?)\*/g, "<em>$1</em>")
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+
+    // Now, split into paragraphs and wrap appropriately
+    return html
+      .split(/\n\s*\n/)
+      .map((paraBlock) => {
+        const trimmedParaBlock = paraBlock.replace(/\n/g, " ").trim();
+
+        if (!trimmedParaBlock) {
+          return ""; // Skip empty blocks
+        }
+
+        // If the block is already an h-tag or p-tag (or other block tags), don't wrap it in another <p>
+        // Regex checks if the string STARTS with a common block tag.
+        if (
+          /^<(h[1-6]|p|div|ul|ol|li|blockquote|hr|table|figure|figcaption)/i.test(
+            trimmedParaBlock
+          )
+        ) {
+          return trimmedParaBlock;
+        }
+
+        // Otherwise, it's content that needs to be wrapped in a <p> tag
+        return `<p>${trimmedParaBlock}</p>`;
+      })
+      .filter((block) => block !== "") // Remove empty strings
+      .join("");
   }
 
   private addError(message: string): void {

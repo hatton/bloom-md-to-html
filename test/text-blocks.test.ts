@@ -23,7 +23,8 @@ Line two`;
     expect(htmlText).toContain("<strong>bold</strong>");
     expect(htmlText).toContain("<em>italic</em>");
     expect(htmlText).toContain('<a href="https://example.com">link</a>');
-    expect(htmlText).toContain("<p>");
+    // Check that the overall structure is paragraphs, but not necessarily that every single line is a new p
+    expect(htmlText).toMatch(/^<p>.*<\/p>$/);
   });
 
   it("should handle multiple languages correctly", () => {
@@ -104,7 +105,65 @@ Some text after h2.`;
     const result = parser.parse(content);
 
     const htmlText = result.pages[0].textBlocks.en;
+    // Headings should not be wrapped in <p> tags
     expect(htmlText).toContain("<h1>Main Heading</h1>");
+    expect(htmlText).toContain("<p>Some text after h1.</p>");
     expect(htmlText).toContain("<h2>Subheading</h2>");
+    expect(htmlText).toContain("<p>Some text after h2.</p>");
+    // Ensure no <p><h1>... or <p><h2>...
+    expect(htmlText).not.toContain("<p><h1>");
+    expect(htmlText).not.toContain("<p><h2>");
+  });
+
+  it("should not wrap existing p tags or headings in more p tags", () => {
+    const content = `---
+allTitles:
+  en: "Test Book"
+languages:
+  en: "English"
+l1: en
+---
+
+<!-- lang=en -->
+<p>This is already a paragraph.</p>
+
+<h1>This is a heading.</h1>
+
+Normal text that should be a paragraph.`;
+
+    const parser = new MarkdownToBloomHtml();
+    const result = parser.parse(content);
+    const htmlText = result.pages[0].textBlocks.en;
+
+    expect(htmlText).toBe(
+      "<p>This is already a paragraph.</p><h1>This is a heading.</h1><p>Normal text that should be a paragraph.</p>"
+    );
+  });
+
+  it("should handle text after a lang comment and a blank line correctly", () => {
+    const content = `---
+allTitles:
+  en: "Test Book"
+languages:
+  mxa: "Mixtec"
+l1: mxa
+---
+
+Ta kichá'a ka'án ndio maa ndika'a' chi'in maa ndika'ni':
+—Va'ága, maun káchí vitin ti ya'á kayúni ja'ún -ka'án maa ndika'a'. —Uva ndávai chataun, ta ká'ni ñun ta káchi tia ñun, xito.
+
+![Image 2](image2.png)
+
+<!-- page-break -->
+
+<!-- lang=mxa -->
+
+¿Naja jati'íni ndichaun chi'ín? -katí maa ndika'a'.`;
+
+    const parser = new MarkdownToBloomHtml();
+    const result = parser.parse(content);
+    expect(result.pages[0].textBlocks.mxa).toBe(
+      "<p>¿Naja jati'íni ndichaun chi'ín? -katí maa ndika'a'.</p>"
+    );
   });
 });

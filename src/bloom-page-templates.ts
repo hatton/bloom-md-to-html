@@ -150,8 +150,7 @@ ${this.generateLanguageTextBlocks(page.textBlocks)}
         </div>
       </div>
     </div>`;
-  }
-  private generateLanguageTextBlocks(
+  }  private generateLanguageTextBlocks(
     textBlocks: Record<string, string>
   ): string {
     return Object.entries(textBlocks)
@@ -160,7 +159,7 @@ ${this.generateLanguageTextBlocks(page.textBlocks)}
           lang,
           text,
         ]) => `                <div class="bloom-editable" lang="${lang}">
-                  <p>${text}</p>
+                  ${text}
                 </div>`
       )
       .join("\n");
