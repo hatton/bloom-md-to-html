@@ -21,7 +21,7 @@ export interface PageContent {
   textBlocks: Record<string, string>; // lang -> text
 }
 
-export interface ParsedBook {
+export interface Book {
   metadata: BookMetadata;
   pages: PageContent[];
 }

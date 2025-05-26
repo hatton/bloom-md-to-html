@@ -17,7 +17,7 @@ describe("Page Creation from Markdown Comments", () => {
 This is the first and only page.`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
 
     expect(result.pages).toHaveLength(1);
     expect(result.pages[0].textBlocks.en).toBe(
@@ -37,7 +37,7 @@ This is the first page.
 This is the second page.`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
 
     expect(result.pages).toHaveLength(2);
     expect(result.pages[0].textBlocks.en).toBe(
@@ -57,7 +57,7 @@ This is the second page.`;
 This is a single page despite the leading pagebreak.`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
 
     expect(result.pages).toHaveLength(1);
     expect(result.pages[0].textBlocks.en).toBe(
@@ -74,7 +74,7 @@ This is a single page despite the trailing pagebreak.
 <!-- page-break -->`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
 
     expect(result.pages).toHaveLength(1);
     expect(result.pages[0].textBlocks.en).toBe(
@@ -102,7 +102,7 @@ Content for the second actual page.
 <!-- page-break -->`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
 
     expect(result.pages).toHaveLength(2);
     expect(result.pages[0].textBlocks.en).toBe(
@@ -127,7 +127,7 @@ Page 1
 Page 2`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
     // This behavior is based on the "empty pages should be filtered out" test in md-to-bloom.test.ts
     expect(result.pages).toHaveLength(2);
     expect(result.pages[0].textBlocks.en).toBe("<p>Page 1</p>");
@@ -142,7 +142,7 @@ Only content is here.
 
 <!-- page-break -->`;
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
     expect(result.pages).toHaveLength(1);
     expect(result.pages[0].textBlocks.en).toBe("<p>Only content is here.</p>");
   });
@@ -155,8 +155,29 @@ Only content is here.
 <!-- lang=en -->
 Only content is here.`;
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
     expect(result.pages).toHaveLength(1);
     expect(result.pages[0].textBlocks.en).toBe("<p>Only content is here.</p>");
   });
+});
+
+it("should set the default language to l2 on a text only page if the only text there is l2", () => {
+  const content = `${basicFrontmatter}
+<!-- lang=en -->
+Hello, this is English content. Because it is the first language, it will be the L1
+<!-- page-break -->
+<!-- lang=fr -->
+This is a text only page with French content.`;
+
+  const parser = new MarkdownToBloomHtml();
+  const result = parser.parseMarkdownIntoABookObject(content);
+
+  expect(result.pages).toHaveLength(2);
+  expect(result.pages[0].textBlocks.en).toBe(
+    "<p>Hello, this is English content. Because it is the first language, it will be the L1</p>"
+  );
+  expect(result.pages[1].textBlocks.fr).toBe(
+    "<p>This is a text only page with French content.</p>"
+  );
+  expect(result.pages[1].layout).toBe("text-only");
 });

@@ -2,7 +2,7 @@ import * as yaml from "js-yaml";
 import type {
   BookMetadata,
   PageContent,
-  ParsedBook,
+  Book,
   ValidationError,
 } from "./types.js";
 import { existsSync } from "fs";
@@ -19,12 +19,12 @@ export class MarkdownToBloomHtml {
     this.validateImages = options.validateImages ?? true;
   }
 
-  parse(content: string): ParsedBook {
+  parseMarkdownIntoABookObject(content: string): Book {
     this.errors = [];
 
     const { frontmatter, body } = this.extractFrontmatter(content);
     const metadata = this.parseMetadata(frontmatter);
-    const pages = this.parsePages(body, metadata);
+    const pages = this.createPageObjects(body, metadata);
 
     if (this.errors.some((e) => e.type === "error")) {
       throw new Error(
@@ -88,7 +88,10 @@ export class MarkdownToBloomHtml {
     }
   }
 
-  private parsePages(body: string, metadata: BookMetadata): PageContent[] {
+  private createPageObjects(
+    body: string,
+    metadata: BookMetadata
+  ): PageContent[] {
     const pageBreaks = body.split("<!-- page-break -->");
     const pages: PageContent[] = [];
 

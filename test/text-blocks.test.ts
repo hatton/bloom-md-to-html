@@ -18,7 +18,7 @@ Line one
 Line two`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
     const htmlText = result.pages[0].textBlocks.en;
     expect(htmlText).toContain("<strong>bold</strong>");
     expect(htmlText).toContain("<em>italic</em>");
@@ -51,7 +51,7 @@ French text
 Spanish text`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
 
     expect(result.pages).toHaveLength(1);
     expect(result.pages[0].textBlocks.en).toBe("<p>English text</p>");
@@ -77,7 +77,7 @@ This is the second paragraph.
 And this is the third paragraph.`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
     expect(result.pages[0].textBlocks.en).toBe(
       "<p>This is the first paragraph.</p><p>This is the second paragraph.</p><p>And this is the third paragraph.</p>"
     );
@@ -102,7 +102,7 @@ Some text after h1.
 Some text after h2.`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
 
     const htmlText = result.pages[0].textBlocks.en;
     // Headings should not be wrapped in <p> tags
@@ -132,7 +132,7 @@ l1: en
 Normal text that should be a paragraph.`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
     const htmlText = result.pages[0].textBlocks.en;
 
     expect(htmlText).toBe(
@@ -154,7 +154,7 @@ l1: mxa
 ¿Naja jati'íni ndichaun chi'ín? -katí maa ndika'a'.`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
     // Text is on the second page (index 1) after the page break
     expect(result.pages[0].textBlocks.mxa).toBe(
       "<p>¿Naja jati'íni ndichaun chi'ín? -katí maa ndika'a'.</p>"

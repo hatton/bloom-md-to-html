@@ -21,7 +21,7 @@ Hello world
 Hola mundo`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
 
     expect(result.metadata.allTitles.en).toBe("Test Book");
     expect(result.metadata.l1).toBe("en");
@@ -58,7 +58,7 @@ Text before image
 Text only page`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
 
     expect(result.pages).toHaveLength(3);
     expect(result.pages[0].layout).toBe("image-top-text-bottom");
@@ -82,7 +82,7 @@ Line one
 Line two`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
 
     const htmlText = result.pages[0].textBlocks.en;
     expect(htmlText).toContain("<strong>bold</strong>");
@@ -103,7 +103,9 @@ Test content`;
 
     const parser = new MarkdownToBloomHtml();
 
-    expect(() => parser.parse(content)).toThrow("Validation failed");
+    expect(() => parser.parseMarkdownIntoABookObject(content)).toThrow(
+      "Validation failed"
+    );
   });
 
   it("should handle images without file validation", () => {
@@ -121,7 +123,7 @@ l1: en
 Text with image that doesn't exist on disk`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
 
     expect(result.pages).toHaveLength(1);
     expect(result.pages[0].layout).toBe("image-top-text-bottom");
@@ -158,7 +160,7 @@ French text
 Spanish text`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
 
     expect(result.pages).toHaveLength(1);
     expect(result.pages[0].textBlocks.en).toBe("<p>English text</p>");
@@ -189,7 +191,7 @@ First page
 Third page`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
 
     // Empty pages should be filtered out
     expect(result.pages).toHaveLength(2);

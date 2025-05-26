@@ -1,14 +1,14 @@
 import { readFileSync, writeFileSync, existsSync, unlinkSync } from "fs";
 import { resolve, dirname, basename, extname } from "path";
 import { MarkdownToBloomHtml } from "./md-to-bloom.js";
-import { BloomHtmlTemplates } from "./bloom-page-templates.js";
-import type { ConversionStats, ParsedBook } from "./types.js";
+import { HtmlGenerator } from "./html-generator.js";
+import type { ConversionStats, Book } from "./types.js";
 
 export class BloomConverter {
-  private templates: BloomHtmlTemplates;
+  private templates: HtmlGenerator;
 
   constructor() {
-    this.templates = new BloomHtmlTemplates();
+    this.templates = new HtmlGenerator();
   }
 
   async convert(
@@ -27,7 +27,7 @@ export class BloomConverter {
 
     // Read and parse markdown
     const content = readFileSync(resolvedInputPath, "utf-8");
-    const book = parser.parse(content);
+    const book = parser.parseMarkdownIntoABookObject(content);
 
     // Show warnings
     const warnings = parser
@@ -73,7 +73,7 @@ export class BloomConverter {
     return resolve(dir, `${name}.htm`);
   }
 
-  private generateStats(book: ParsedBook): ConversionStats {
+  private generateStats(book: Book): ConversionStats {
     const languages = new Set<string>();
     let imageCount = 0;
     const layouts: Record<string, number> = {};

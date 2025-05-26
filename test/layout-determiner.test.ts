@@ -12,6 +12,9 @@ describe("determinePageLayout", () => {
   it("should return 'text-only' when only text is present (l1)", () => {
     expect(determinePageLayout([l1], l1, l2)).toEqual("text-only");
   });
+  it("should return 'text-only' when only l2 text is present", () => {
+    expect(determinePageLayout([l2], l1, l2)).toEqual("text-only");
+  });
 
   it("should return 'text-only' when only text is present (l1, l2)", () => {
     expect(determinePageLayout([l1, l2], l1, l2)).toEqual("text-only");

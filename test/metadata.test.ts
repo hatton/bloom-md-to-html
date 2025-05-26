@@ -21,7 +21,7 @@ Hello world
 Hola mundo`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parse(content);
+    const result = parser.parseMarkdownIntoABookObject(content);
 
     expect(result.metadata.allTitles.en).toBe("Test Book");
     expect(result.metadata.allTitles.es).toBe("Libro de Prueba");
@@ -43,6 +43,8 @@ Test content`;
 
     const parser = new MarkdownToBloomHtml();
 
-    expect(() => parser.parse(content)).toThrow("Validation failed");
+    expect(() => parser.parseMarkdownIntoABookObject(content)).toThrow(
+      "Validation failed"
+    );
   });
 });

@@ -1,9 +1,9 @@
 import { describe, it, expect } from "bun:test";
-import { BloomHtmlTemplates } from "../src/bloom-page-templates.js";
-import type { BookMetadata, PageContent, ParsedBook } from "../src/types.js";
+import { HtmlGenerator } from "../src/html-generator.js";
+import type { BookMetadata, PageContent, Book } from "../src/types.js";
 
 describe("HtmlTemplates", () => {
-  const templates = new BloomHtmlTemplates();
+  const templates = new HtmlGenerator();
 
   const mockMetadata: BookMetadata = {
     allTitles: { en: "Test Book", es: "Libro de Prueba" },
@@ -20,7 +20,7 @@ describe("HtmlTemplates", () => {
       textBlocks: { en: "Hello world", es: "Hola mundo" },
     };
 
-    const book: ParsedBook = {
+    const book: Book = {
       metadata: mockMetadata,
       pages: [mockPage],
     };
@@ -40,7 +40,7 @@ describe("HtmlTemplates", () => {
       textBlocks: { en: "Test" },
     };
 
-    const book: ParsedBook = {
+    const book: Book = {
       metadata: {
         ...mockMetadata,
         isbn: "978-0123456789",
@@ -79,7 +79,7 @@ describe("HtmlTemplates", () => {
       textBlocks: { en: "Text above image" },
     };
 
-    const book: ParsedBook = {
+    const book: Book = {
       metadata: mockMetadata,
       pages: [textOnlyPage, imageTopPage, textTopPage],
     };
@@ -106,7 +106,7 @@ describe("HtmlTemplates", () => {
       allTitles: { en: 'Book & "Special" <chars>' },
     };
 
-    const book: ParsedBook = {
+    const book: Book = {
       metadata: metadataWithSpecialChars,
       pages: [mockPage],
     };
@@ -127,7 +127,7 @@ describe("HtmlTemplates", () => {
       },
     };
 
-    const book: ParsedBook = {
+    const book: Book = {
       metadata: mockMetadata,
       pages: [mockPage],
     };
@@ -149,7 +149,7 @@ describe("HtmlTemplates", () => {
       },
     };
 
-    const book: ParsedBook = {
+    const book: Book = {
       metadata: mockMetadata,
       pages: [mockPage],
     };
@@ -175,7 +175,7 @@ describe("HtmlTemplates", () => {
       textBlocks: {}, // No text blocks for image-only layout
     };
 
-    const book: ParsedBook = {
+    const book: Book = {
       metadata: mockMetadata,
       pages: [imageOnlyPage],
     };
@@ -203,7 +203,7 @@ describe("HtmlTemplates", () => {
       },
     };
 
-    const book: ParsedBook = {
+    const book: Book = {
       metadata: mockMetadata,
       pages: [textImageTextPage],
     };
@@ -239,7 +239,7 @@ describe("HtmlTemplates", () => {
       },
     };
 
-    const book: ParsedBook = {
+    const book: Book = {
       metadata: mockMetadata,
       pages: [bilingualTextImageTextPage],
     };
@@ -272,7 +272,7 @@ describe("HtmlTemplates", () => {
       textBlocks: {},
     };
 
-    const book: ParsedBook = {
+    const book: Book = {
       metadata: mockMetadata,
       pages: [imageOnlyPageNoImage],
     };
@@ -294,7 +294,7 @@ describe("HtmlTemplates", () => {
       textBlocks: {},
     };
 
-    const book: ParsedBook = {
+    const book: Book = {
       metadata: mockMetadata,
       pages: [textImageTextEmpty],
     };
@@ -323,12 +323,12 @@ describe("HtmlTemplates", () => {
       textBlocks: { en: "Test content", es: "Contenido de prueba" },
     };
 
-    const book1: ParsedBook = {
+    const book1: Book = {
       metadata: mockMetadata,
       pages: [textImageTextPage],
     };
 
-    const book2: ParsedBook = {
+    const book2: Book = {
       metadata: mockMetadata,
       pages: [bilingualPage],
     };
