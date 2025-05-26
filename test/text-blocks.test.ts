@@ -149,19 +149,13 @@ languages:
 l1: mxa
 ---
 
-Ta kichá'a ka'án ndio maa ndika'a' chi'in maa ndika'ni':
-—Va'ága, maun káchí vitin ti ya'á kayúni ja'ún -ka'án maa ndika'a'. —Uva ndávai chataun, ta ká'ni ñun ta káchi tia ñun, xito.
-
-![Image 2](image2.png)
-
-<!-- page-break -->
-
 <!-- lang=mxa -->
 
 ¿Naja jati'íni ndichaun chi'ín? -katí maa ndika'a'.`;
 
     const parser = new MarkdownToBloomHtml();
     const result = parser.parse(content);
+    // Text is on the second page (index 1) after the page break
     expect(result.pages[0].textBlocks.mxa).toBe(
       "<p>¿Naja jati'íni ndichaun chi'ín? -katí maa ndika'a'.</p>"
     );

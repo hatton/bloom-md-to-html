@@ -7,6 +7,7 @@ import type {
 } from "./types.js";
 import { existsSync } from "fs";
 import { dirname, join } from "path";
+import { determinePageLayout } from "./layout-determiner.js";
 
 export class MarkdownToBloomHtml {
   private inputPath?: string;
@@ -111,15 +112,13 @@ export class MarkdownToBloomHtml {
   ): PageContent | null {
     const lines = content.split("\n");
     const page: PageContent = {
-      layout: "text-only",
+      layout: "text-only", // Default layout
       textBlocks: {},
     };
 
     let currentLang = "";
     let currentText = "";
-    let imageFound = false;
-    let imagePosition: "before" | "after" | "none" = "none";
-    let langBlocksStarted = false;
+    const sequence: Array<string | "image"> = [];
 
     for (const line of lines) {
       const trimmedLine = line.trim();
@@ -128,10 +127,9 @@ export class MarkdownToBloomHtml {
       const imageMatch = trimmedLine.match(/!\[.*?\]\(([^)]+)\)/);
       if (imageMatch) {
         const imagePath = imageMatch[1];
-        page.image = imagePath;
-        imageFound = true;
-        imagePosition = langBlocksStarted ? "after" : "before";
-        // Validate image exists (only if validateImages is true and inputPath is provided)
+        page.image = imagePath; // Still store the primary image for the page
+        sequence.push("image");
+
         if (this.validateImages && this.inputPath) {
           const fullImagePath = join(dirname(this.inputPath), imagePath);
           if (!existsSync(fullImagePath)) {
@@ -146,7 +144,6 @@ export class MarkdownToBloomHtml {
       // Check for language blocks
       const langMatch = trimmedLine.match(/<!-- lang=([a-z]{2,3}) -->/);
       if (langMatch) {
-        // Save previous language block
         if (currentLang && currentText.trim()) {
           page.textBlocks[currentLang] = this.convertMarkdownToHtml(
             currentText.trim()
@@ -155,9 +152,8 @@ export class MarkdownToBloomHtml {
 
         currentLang = langMatch[1];
         currentText = "";
-        langBlocksStarted = true;
+        sequence.push(currentLang); // Add lang to sequence when it's declared
 
-        // Validate language exists in metadata
         if (!metadata.languages || !metadata.languages[currentLang]) {
           this.addWarning(
             `Language '${currentLang}' not found in metadata languages (page ${pageNumber})`
@@ -166,30 +162,24 @@ export class MarkdownToBloomHtml {
         continue;
       }
 
-      // Collect text content
       if (currentLang) {
         currentText += line + "\n";
       }
     }
 
-    // Save final language block
     if (currentLang && currentText.trim()) {
       page.textBlocks[currentLang] = this.convertMarkdownToHtml(
         currentText.trim()
       );
     }
 
-    // Determine layout
-    if (imageFound) {
-      page.layout =
-        imagePosition === "before"
-          ? "image-top-text-bottom"
-          : "text-top-image-bottom";
-    }
+    const hasText = Object.keys(page.textBlocks).length > 0;
+    const hasImage = sequence.some((item) => item === "image");
 
-    // Validate page has content
-    if (Object.keys(page.textBlocks).length === 0) {
-      this.addWarning(`Page ${pageNumber} has no text content`);
+    page.layout = determinePageLayout(sequence, metadata.l1, metadata.l2);
+
+    if (!hasText && !hasImage) {
+      this.addWarning(`Page ${pageNumber} has no text or image content`);
       return null;
     }
 
