@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { MarkdownToBloomHtml } from "../src/md-to-bloom.js";
+import type { TextBlockElement, ImageElement } from "../src/types.js";
 
 describe("MarkdownParser", () => {
   it("should parse valid frontmatter", () => {
@@ -22,13 +23,16 @@ Hola mundo`;
 
     const parser = new MarkdownToBloomHtml();
     const result = parser.parseMarkdownIntoABookObject(content);
-
     expect(result.metadata.allTitles.en).toBe("Test Book");
     expect(result.metadata.l1).toBe("en");
     expect(result.metadata.l2).toBe("es");
     expect(result.pages).toHaveLength(1);
-    expect(result.pages[0].textBlocks.en).toBe("<p>Hello world</p>");
-    expect(result.pages[0].textBlocks.es).toBe("<p>Hola mundo</p>");
+    expect((result.pages[0].elements[0] as TextBlockElement).content.en).toBe(
+      "<p>Hello world</p>"
+    );
+    expect((result.pages[0].elements[0] as TextBlockElement).content.es).toBe(
+      "<p>Hola mundo</p>"
+    );
   });
 
   it("should detect page layouts correctly", () => {
@@ -80,11 +84,11 @@ This is **bold** text and *italic* text.
 Here's a [link](https://example.com).
 Line one
 Line two`;
-
     const parser = new MarkdownToBloomHtml();
     const result = parser.parseMarkdownIntoABookObject(content);
 
-    const htmlText = result.pages[0].textBlocks.en;
+    const htmlText = (result.pages[0].elements[0] as TextBlockElement).content
+      .en;
     expect(htmlText).toContain("<strong>bold</strong>");
     expect(htmlText).toContain("<em>italic</em>");
     expect(htmlText).toContain('<a href="https://example.com">link</a>');
@@ -124,11 +128,12 @@ Text with image that doesn't exist on disk`;
 
     const parser = new MarkdownToBloomHtml();
     const result = parser.parseMarkdownIntoABookObject(content);
-
     expect(result.pages).toHaveLength(1);
     expect(result.pages[0].layout).toBe("image-top-text-bottom");
-    expect(result.pages[0].image).toBe("nonexistent-image.png");
-    expect(result.pages[0].textBlocks.en).toBe(
+    expect((result.pages[0].elements[0] as ImageElement).src).toBe(
+      "nonexistent-image.png"
+    );
+    expect((result.pages[0].elements[1] as TextBlockElement).content.en).toBe(
       "<p>Text with image that doesn't exist on disk</p>"
     );
 
@@ -161,12 +166,19 @@ Spanish text`;
 
     const parser = new MarkdownToBloomHtml();
     const result = parser.parseMarkdownIntoABookObject(content);
-
     expect(result.pages).toHaveLength(1);
-    expect(result.pages[0].textBlocks.en).toBe("<p>English text</p>");
-    expect(result.pages[0].textBlocks.fr).toBe("<p>French text</p>");
-    expect(result.pages[0].textBlocks.es).toBe("<p>Spanish text</p>");
-    expect(Object.keys(result.pages[0].textBlocks)).toHaveLength(3);
+    expect((result.pages[0].elements[0] as TextBlockElement).content.en).toBe(
+      "<p>English text</p>"
+    );
+    expect((result.pages[0].elements[0] as TextBlockElement).content.fr).toBe(
+      "<p>French text</p>"
+    );
+    expect((result.pages[0].elements[0] as TextBlockElement).content.es).toBe(
+      "<p>Spanish text</p>"
+    );
+    expect(
+      Object.keys((result.pages[0].elements[0] as TextBlockElement).content)
+    ).toHaveLength(3);
   });
 
   it("should handle empty pages correctly", () => {
@@ -191,11 +203,13 @@ First page
 Third page`;
 
     const parser = new MarkdownToBloomHtml();
-    const result = parser.parseMarkdownIntoABookObject(content);
-
-    // Empty pages should be filtered out
+    const result = parser.parseMarkdownIntoABookObject(content); // Empty pages should be filtered out
     expect(result.pages).toHaveLength(2);
-    expect(result.pages[0].textBlocks.en).toBe("<p>First page</p>");
-    expect(result.pages[1].textBlocks.en).toBe("<p>Third page</p>");
+    expect((result.pages[0].elements[0] as TextBlockElement).content.en).toBe(
+      "<p>First page</p>"
+    );
+    expect((result.pages[1].elements[0] as TextBlockElement).content.en).toBe(
+      "<p>Third page</p>"
+    );
   });
 });

@@ -1,13 +1,15 @@
-import * as yaml from "js-yaml";
-import type {
-  BookMetadata,
-  PageContent,
-  Book,
-  ValidationError,
-} from "./types.js";
 import { existsSync } from "fs";
+import * as yaml from "js-yaml";
 import { dirname, join } from "path";
 import { determinePageLayout } from "./layout-determiner.js";
+import type {
+  Book,
+  BookMetadata,
+  PageContent,
+  PageElement,
+  TextBlockElement,
+  ValidationError,
+} from "./types.js";
 
 export class MarkdownToBloomHtml {
   private inputPath?: string;
@@ -107,31 +109,45 @@ export class MarkdownToBloomHtml {
 
     return pages;
   }
-
   private parsePage(
     content: string,
     metadata: BookMetadata,
     pageNumber: number
   ): PageContent | null {
     const lines = content.split("\n");
-    const page: PageContent = {
-      layout: "text-only", // Default layout
-      textBlocks: {},
-    };
+    const elements: PageElement[] = [];
 
+    let currentTextBlock: TextBlockElement | null = null;
     let currentLang = "";
     let currentText = "";
-    const sequence: Array<string | "image"> = [];
 
     for (const line of lines) {
       const trimmedLine = line.trim();
 
+      /* The algorithm:
+       Go through each line:
+            If the line is an image:
+               1) if we have a currentTextBlock, push it to elements and set it to null.
+               2) push an image element to elements.
+            If the line is a lang comment:
+            1) if currentTextBlock not null and already has a currentLang for this lang comment, push it to elements and set it to null.
+            2) if currentTextBlock is null, create a new one.
+            
+            If the line is some text
+            1) set the currentTextBlock's entry for currentLanguage to the convertMarkdownToHtml(currentText.trim()).
+      When we are done with lines, if we have a currentTextBlock, push it to elements.
+      */
       // Check for images
       const imageMatch = trimmedLine.match(/!\[.*?\]\(([^)]+)\)/);
       if (imageMatch) {
+        // Finalize current text block before adding image
+        if (currentTextBlock) {
+          elements.push(currentTextBlock);
+          currentTextBlock = null;
+        }
+
         const imagePath = imageMatch[1];
-        page.image = imagePath; // Still store the primary image for the page
-        sequence.push("image");
+        elements.push({ type: "image", src: imagePath });
 
         if (this.validateImages && this.inputPath) {
           const fullImagePath = join(dirname(this.inputPath), imagePath);
@@ -147,50 +163,74 @@ export class MarkdownToBloomHtml {
       // Check for language blocks
       const langMatch = trimmedLine.match(/<!-- lang=([a-z]{2,3}) -->/);
       if (langMatch) {
-        if (currentLang && currentText.trim()) {
-          page.textBlocks[currentLang] = this.convertMarkdownToHtml(
-            currentText.trim()
-          );
+        const newLang = langMatch[1];
+
+        // 1) if currentTextBlock not null and already has a currentLang for this lang comment, push it to elements and set it to null.
+        if (currentTextBlock && currentTextBlock.content[currentLang]) {
+          elements.push(currentTextBlock);
+          currentTextBlock = null;
+        }
+        // 2) if currentTextBlock is null, create a new one.
+        if (!currentTextBlock) {
+          currentTextBlock = { type: "text", content: {} };
         }
 
-        currentLang = langMatch[1];
+        currentLang = newLang;
         currentText = "";
-        sequence.push(currentLang); // Add lang to sequence when it's declared
 
-        if (!metadata.languages || !metadata.languages[currentLang]) {
+        if (!metadata.languages[currentLang]) {
           this.addWarning(
-            `Language '${currentLang}' not found in metadata languages (page ${pageNumber})`
+            `Encountered lang="${currentLang}" but this language is not defined in the metadata languages (page ${pageNumber}).`
           );
         }
         continue;
       }
 
-      if (currentLang) {
-        currentText += line + "\n";
+      // If the line is some text,  set the currentTextBlock's entry for currentLanguage to the convertMarkdownToHtml(currentText.trim()).
+      // Accumulate text for the current language
+      if (currentTextBlock && currentLang) {
+        currentText += trimmedLine + "\n"; // Accumulate text
+      } else {
+        this.addWarning(
+          `Found text outside of a language block (page ${pageNumber}): "${trimmedLine}"`
+        );
       }
     }
 
-    if (currentLang && currentText.trim()) {
-      page.textBlocks[currentLang] = this.convertMarkdownToHtml(
-        currentText.trim()
-      );
+    // Finalize any remaining text block
+    if (currentTextBlock && currentLang) {
+      elements.push(currentTextBlock);
     }
 
-    const hasText = Object.keys(page.textBlocks).length > 0;
-    const hasImage = sequence.some((item) => item === "image");
-
-    page.layout = determinePageLayout(sequence, metadata.l1, metadata.l2);
-
-    if (!hasText && !hasImage) {
-      this.addWarning(`Page ${pageNumber} has no text or image content`);
-      return null;
+    if (elements.length === 0) {
+      return null; // No content for this page
     }
+    const pattern = elements.map((e) => {
+      if (e.type === "image") return "image";
+      else if (e.type === "text") {
+        // determine if we want  "l1-only", "l2-only", or "multiple-languages"
+        const textBlock = e as TextBlockElement;
+        const langs = Object.keys(textBlock.content);
+        if (langs.length === 1) {
+          return langs[0] === metadata.l1 ? "l1-only" : "l2-only";
+        } else if (langs.length > 1) {
+          return "multiple-languages";
+        } else {
+          this.addError(
+            `Text block without languages found on page ${pageNumber}`
+          );
+        }
+      }
+      return "l1-only"; // Default fallback
+    });
+    const layout = determinePageLayout(pattern);
 
-    return page;
+    return { layout, elements };
   }
-  private convertMarkdownToHtml(text: string): string {
+
+  private convertMarkdownToHtml(markdown: string): string {
     // Apply block transformations first (headings)
-    let html = text
+    let html = markdown
       .replace(/^# (.*?)$/gm, "<h1>$1</h1>")
       .replace(/^## (.*?)$/gm, "<h2>$1</h2>");
     // Add other heading levels if needed H3-H6: .replace(/^### (.*?)$/gm, "<h3>$1</h3>") etc.

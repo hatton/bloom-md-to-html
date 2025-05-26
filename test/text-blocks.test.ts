@@ -1,5 +1,6 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import { MarkdownToBloomHtml } from "../src/md-to-bloom.js";
+import type { TextBlockElement } from "../src/types.js";
 
 describe("Text Block Handling", () => {
   it("should convert markdown formatting to HTML", () => {
@@ -19,7 +20,8 @@ Line two`;
 
     const parser = new MarkdownToBloomHtml();
     const result = parser.parseMarkdownIntoABookObject(content);
-    const htmlText = result.pages[0].textBlocks.en;
+    const htmlText = (result.pages[0].elements[0] as TextBlockElement).content
+      .en;
     expect(htmlText).toContain("<strong>bold</strong>");
     expect(htmlText).toContain("<em>italic</em>");
     expect(htmlText).toContain('<a href="https://example.com">link</a>');
@@ -54,10 +56,19 @@ Spanish text`;
     const result = parser.parseMarkdownIntoABookObject(content);
 
     expect(result.pages).toHaveLength(1);
-    expect(result.pages[0].textBlocks.en).toBe("<p>English text</p>");
-    expect(result.pages[0].textBlocks.fr).toBe("<p>French text</p>");
-    expect(result.pages[0].textBlocks.es).toBe("<p>Spanish text</p>");
-    expect(Object.keys(result.pages[0].textBlocks)).toHaveLength(3);
+
+    expect((result.pages[0].elements[0] as TextBlockElement).content.en).toBe(
+      "<p>English text</p>"
+    );
+    console.log(JSON.stringify(result, null, 2));
+
+    expect((result.pages[0].elements[0] as TextBlockElement).content.fr).toBe(
+      "<p>French text</p>"
+    );
+    expect((result.pages[0].elements[0] as TextBlockElement).content.es).toBe(
+      "<p>Spanish text</p>"
+    );
+    expect(Object.keys(result.pages[0].elements)).toHaveLength(3);
   });
 
   it("should handle multiple paragraphs correctly", () => {
@@ -78,7 +89,7 @@ And this is the third paragraph.`;
 
     const parser = new MarkdownToBloomHtml();
     const result = parser.parseMarkdownIntoABookObject(content);
-    expect(result.pages[0].textBlocks.en).toBe(
+    expect((result.pages[0].elements[0] as TextBlockElement).content.en).toBe(
       "<p>This is the first paragraph.</p><p>This is the second paragraph.</p><p>And this is the third paragraph.</p>"
     );
   });
@@ -104,7 +115,8 @@ Some text after h2.`;
     const parser = new MarkdownToBloomHtml();
     const result = parser.parseMarkdownIntoABookObject(content);
 
-    const htmlText = result.pages[0].textBlocks.en;
+    const htmlText = (result.pages[0].elements[0] as TextBlockElement).content
+      .en;
     // Headings should not be wrapped in <p> tags
     expect(htmlText).toContain("<h1>Main Heading</h1>");
     expect(htmlText).toContain("<p>Some text after h1.</p>");
@@ -133,7 +145,8 @@ Normal text that should be a paragraph.`;
 
     const parser = new MarkdownToBloomHtml();
     const result = parser.parseMarkdownIntoABookObject(content);
-    const htmlText = result.pages[0].textBlocks.en;
+    const htmlText = (result.pages[0].elements[0] as TextBlockElement).content
+      .en;
 
     expect(htmlText).toBe(
       "<p>This is already a paragraph.</p><h1>This is a heading.</h1><p>Normal text that should be a paragraph.</p>"
@@ -156,8 +169,9 @@ l1: mxa
     const parser = new MarkdownToBloomHtml();
     const result = parser.parseMarkdownIntoABookObject(content);
     // Text is on the second page (index 1) after the page break
-    expect(result.pages[0].textBlocks.mxa).toBe(
+    expect((result.pages[0].elements[0] as TextBlockElement).content.en).toBe(
       "<p>¿Naja jati'íni ndichaun chi'ín? -katí maa ndika'a'.</p>"
     );
+    expect(result.pages).toHaveLength(1);
   });
 });

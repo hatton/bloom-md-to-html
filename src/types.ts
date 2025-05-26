@@ -9,16 +9,28 @@ export interface BookMetadata {
   copyright?: string;
 }
 
+export interface ImageElement {
+  type: "image";
+  src: string;
+}
+
+export interface TextBlockElement {
+  type: "text";
+  content: Record<string, string>; // lang -> text
+}
+
+export type PageElement = ImageElement | TextBlockElement;
+
+export type Layout =
+  | "image-top-text-bottom"
+  | "text-top-image-bottom"
+  | "text-only"
+  | "image-only"
+  | "text-image-text"
+  | "bilingual-text-image-text";
 export interface PageContent {
-  layout:
-    | "image-top-text-bottom"
-    | "text-top-image-bottom"
-    | "text-only"
-    | "image-only"
-    | "text-image-text"
-    | "bilingual-text-image-text";
-  image?: string;
-  textBlocks: Record<string, string>; // lang -> text
+  layout: Layout;
+  elements: PageElement[];
 }
 
 export interface Book {

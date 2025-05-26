@@ -1,6 +1,6 @@
-import type { BookMetadata, PageContent, Book } from "./types.js";
-import { mapLicense } from "./licenses.js";
 import escapeHtml from "escape-html";
+import { mapLicense } from "./licenses.js";
+import type { Book, BookMetadata, PageContent } from "./types.js";
 
 export class HtmlGenerator {
   generateHtmlDocument(book: Book): string {
@@ -10,11 +10,15 @@ export class HtmlGenerator {
     <meta charset="UTF-8" />
     <meta name="Generator" content="Bloom Markdown Converter" />
     <meta name="BloomFormatVersion" content="2.1" />
-    <title>${escapeHtml(book.metadata.allTitles[book.metadata.l1] || "Untitled")}</title>
+    <title>${escapeHtml(
+      book.metadata.allTitles[book.metadata.l1] || "Untitled"
+    )}</title>
   </head>
   <body>
     ${this.generateBloomDataDiv(book.metadata)}
-    ${book.pages.map((page) => this.generatePage(page)).join("\n")}
+    ${book.pages
+      .map((page) => this.generatePage(page, book.metadata))
+      .join("\n")}
   </body>
 </html>`;
   }
@@ -72,137 +76,221 @@ export class HtmlGenerator {
     return elements.join("\n");
   }
 
-  private generatePage(page: PageContent): string {
+  private generatePage(page: PageContent, metadata: BookMetadata): string {
     switch (page.layout) {
       case "image-only":
         return this.generateImageOnlyPage(page);
       case "image-top-text-bottom":
-        return this.generateImageTopTextBottomPage(page);
+        return this.generateImageTopTextBottomPage(page, metadata);
       case "text-top-image-bottom":
-        return this.generateTextTopImageBottomPage(page);
+        return this.generateTextTopImageBottomPage(page, metadata);
       case "text-image-text":
         // "V", and "N1" are special placeholders for the first and second languages
         // We normally use these instead of actual language codes
-        return this.generateImageInMiddlePage(page, "V", "V");
+        return this.generateImageInMiddlePage(page, metadata, "V", "V");
       case "bilingual-text-image-text":
-        return this.generateImageInMiddlePage(page, "V", "N1");
+        return this.generateImageInMiddlePage(page, metadata, "V", "N1");
       case "text-only":
       default:
-        return this.generateTextOnlyPage(page);
+        return this.generateTextOnlyPage(page, metadata);
     }
   }
 
-  private generateImageTopTextBottomPage(page: PageContent): string {
+  private generateImageTopTextBottomPage(
+    page: PageContent,
+    metadata: BookMetadata
+  ): string {
+    const imageElement = page.elements.find((el) => el.type === "image");
+    const textElement = page.elements.find((el) => el.type === "text");
     return `    <div class="bloom-page customPage">
       <div class="marginBox">
         <div class="split-pane horizontal-percent">
           <div class="split-pane-component position-top">
-            ${this.imageBlock(page.image)}
+            ${this.imageBlock(imageElement ? imageElement.src : "")}
           </div>
           <div class="split-pane-divider horizontal-divider"></div>
           <div class="split-pane-component position-bottom">
-              ${this.textBlock(page.textBlocks, ["V"])}
+              ${this.textBlock(
+                textElement ? (textElement as any).content : {},
+                [metadata.l1, metadata.l2].filter(Boolean) as string[],
+                metadata
+              )}
           </div>
         </div>
       </div>
     </div>`;
   }
 
-  private generateTextTopImageBottomPage(page: PageContent): string {
+  private generateTextTopImageBottomPage(
+    page: PageContent,
+    metadata: BookMetadata
+  ): string {
+    const imageElement = page.elements.find((el) => el.type === "image");
+    const textElement = page.elements.find((el) => el.type === "text");
     return `    <div class="bloom-page customPage">
       <div class="marginBox">
         <div class="split-pane horizontal-percent">
           <div class="split-pane-component position-top">
-            ${this.textBlock(page.textBlocks, ["V"])}
+            ${this.textBlock(
+              textElement ? (textElement as any).content : {},
+              [metadata.l1, metadata.l2].filter(Boolean) as string[],
+              metadata
+            )}
           </div>
           <div class="split-pane-divider horizontal-divider"></div>
           <div class="split-pane-component position-bottom">
-            ${this.imageBlock(page.image)}
+            ${this.imageBlock(imageElement ? imageElement.src : "")}
           </div>
         </div>
       </div>
     </div>`;
   }
 
-  private generateTextOnlyPage(page: PageContent): string {
+  private generateTextOnlyPage(
+    page: PageContent,
+    metadata: BookMetadata
+  ): string {
+    const textElement = page.elements.find((el) => el.type === "text");
     return `<div class="bloom-page customPage">
               <div class="marginBox">
-                ${this.textBlock(page.textBlocks, ["V"])}
+                ${this.textBlock(
+                  textElement ? (textElement as any).content : {},
+                  [metadata.l1, metadata.l2].filter(Boolean) as string[],
+                  metadata
+                )}
               </div>
             </div>`;
   }
 
   private generateImageOnlyPage(page: PageContent): string {
+    const imageElement = page.elements.find((el) => el.type === "image");
     return `<div class="bloom-page customPage">
               <div class="marginBox">
-                  ${this.imageBlock(page.image || "")}
-              </div>
+                  ${this.imageBlock(imageElement ? imageElement.src : "")}              </div>
             </div>`;
   }
+
   private generateImageInMiddlePage(
     page: PageContent,
-    topLang: string,
-    bottomLang: string
+    metadata: BookMetadata,
+    topLangPlaceholder: string, // "V" or "N1"
+    bottomLangPlaceholder: string // "V" or "N1"
   ): string {
+    const imageElement = page.elements.find((el) => el.type === "image");
+    const textElements = page.elements.filter((el) => el.type === "text");
+
+    // Combine all text content for each section
+    const topTextContent: Record<string, string> = {};
+    const bottomTextContent: Record<string, string> = {};
+
+    // For text-image-text layout, we need to distribute text elements
+    if (textElements.length > 0) {
+      // First text element goes to top
+      if (textElements[0]) {
+        Object.assign(topTextContent, (textElements[0] as any).content);
+      }
+      // If there's a second text element, it goes to bottom
+      if (textElements.length > 1 && textElements[1]) {
+        Object.assign(bottomTextContent, (textElements[1] as any).content);
+      }
+      // If only one text element, it goes to both top and bottom (for text-image-text)
+      else if (textElements.length === 1) {
+        Object.assign(bottomTextContent, (textElements[0] as any).content);
+      }
+    }
+
+    const topLangs = this.getLangsForPlaceholder(topLangPlaceholder, metadata);
+    const bottomLangs = this.getLangsForPlaceholder(
+      bottomLangPlaceholder,
+      metadata
+    );
+
     return `<div class="bloom-page customPage">
           <div class="marginBox">
             <div class="split-pane horizontal-percent">
                 <div class="split-pane-component position-top" >
-                   ${this.textBlock(page.textBlocks, [topLang])}
+                   ${this.textBlock(topTextContent, topLangs, metadata)}
                 </div>
                 <div class="split-pane-divider horizontal-divider"></div>
-
-                <div class="split-pane-component position-bottom">
+                <div class="split-pane-component position-middle">
                     <div class="split-pane-component-inner">
-                        <div class="split-pane horizontal-percent">
-                            <div class="split-pane-component position-top">
-                               ${this.imageBlock(page.image)}
-                            </div>
-                            <div class="split-pane-divider horizontal-divider"></div>
-
-                            <div class="split-pane-component position-bottom">
-                               ${this.textBlock(page.textBlocks, [bottomLang])}
-                            </div>
+                <div class="bloom-canvas bloom-leadingElement bloom-has-canvas-element">
+                    <div class="bloom-canvas-element bloom-backgroundImage">
+                        <div class="bloom-leadingElement bloom-imageContainer">
+                          <img src="${escapeHtml(imageElement?.src || "")}" />
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>`;
+                </div>
+                <div class="split-pane-divider horizontal-divider"></div>
+                <div class="split-pane-component position-bottom">
+                    ${this.textBlock(bottomTextContent, bottomLangs, metadata)}
+                </div>
+            </div>
+          </div>
+        </div>`;
   }
-  private imageBlock(imagePath?: string): string {
+
+  private getLangsForPlaceholder(
+    placeholder: string,
+    metadata: BookMetadata
+  ): string[] {
+    if (placeholder === "V") {
+      return [metadata.l1];
+    }
+    if (placeholder === "N1" && metadata.l2) {
+      return [metadata.l2];
+    }
+    // Fallback or if N1 is used but no l2
+    return [metadata.l1];
+  }
+
+  private imageBlock(src: string | undefined): string {
     return `<div class="split-pane-component-inner">
                 <div class="bloom-canvas bloom-leadingElement bloom-has-canvas-element">
                     <div class="bloom-canvas-element bloom-backgroundImage">
                         <div class="bloom-leadingElement bloom-imageContainer">
-                          <img src="${escapeHtml(imagePath || "")}" />
+                          <img src="${escapeHtml(src || "")}" />
                         </div>
                     </div>
                 </div>
             </div>`;
   }
-
   private textBlock(
     textBlocks: Record<string, string>,
-    langs: string[]
+    langs: string[],
+    metadata: BookMetadata
   ): string {
-    return `<div class="split-pane-component-inner">
-                        <div class="bloom-translationGroup"  data-default-languages="${langs.join(",")}" >
-                          ${this.bloomEditables(textBlocks)}
-                        </div>
-                    </div>`;
-  }
-  private bloomEditables(textBlocks: Record<string, string>): string {
-    return Object.entries(textBlocks)
-      .map(
-        ([
-          lang,
-          text,
-        ]) => `                <div class="bloom-editable" lang="${lang}">
-                  ${text}
-                </div>`
-      )
-      .join("\n");
+    const paragraphs: string[] = [];
+    for (const lang of langs) {
+      const actualLangCode =
+        lang === "V"
+          ? metadata.l1
+          : lang === "N1" && metadata.l2
+            ? metadata.l2
+            : metadata.l1;
+      if (textBlocks[actualLangCode]) {
+        const content = textBlocks[actualLangCode];
+        // Don't wrap in <p> if content already contains block-level HTML tags
+        const shouldWrapInParagraph =
+          !/<(h[1-6]|p|div|ul|ol|li|blockquote|hr|table|figure|figcaption)/i.test(
+            content
+          );
+        const wrappedContent = shouldWrapInParagraph
+          ? `<p>${content}</p>`
+          : content;
+
+        paragraphs.push(
+          `<div class="bloom-translationGroup">
+            <div class="bloom-editable" lang="${actualLangCode}">
+                ${wrappedContent}
+            </div>
+        </div>`
+        );
+      }
+    }
+    return paragraphs.join("\n");
   }
 }
 
