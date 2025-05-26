@@ -10,7 +10,13 @@ export interface BookMetadata {
 }
 
 export interface PageContent {
-  layout: "image-top-text-bottom" | "text-top-image-bottom" | "text-only";
+  layout:
+    | "image-top-text-bottom"
+    | "text-top-image-bottom"
+    | "text-only"
+    | "image-only"
+    | "text-image-text"
+    | "bilingual-text-image-text";
   image?: string;
   textBlocks: Record<string, string>; // lang -> text
 }
@@ -28,7 +34,7 @@ export interface ConversionStats {
 }
 
 export interface ValidationError {
-  type: 'error' | 'warning';
+  type: "error" | "warning";
   message: string;
   line?: number;
 }
