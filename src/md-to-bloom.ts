@@ -158,11 +158,16 @@ export class MarkdownToBloomHtml {
           }
         }
         continue; // go to the next line in the markdown
-      }
-
-      // Check for language blocks
+      } // Check for language blocks
       const langMatch = trimmedLine.match(/<!-- lang=([a-z]{2,3}) -->/);
       if (langMatch) {
+        // Finalize current text before switching languages
+        if (currentTextBlock && currentLang && currentText.trim()) {
+          currentTextBlock.content[currentLang] = this.convertMarkdownToHtml(
+            currentText.trim()
+          );
+        }
+
         currentLang = langMatch[1];
 
         // 1) if currentTextBlock not null and already has a currentLang for this lang comment, push it to elements and set it to null.
@@ -178,30 +183,28 @@ export class MarkdownToBloomHtml {
         currentTextBlock.content[currentLang] = "";
         currentText = "";
 
-        if (!metadata.languages[currentLang]) {
+        if (!metadata.languages || !metadata.languages[currentLang]) {
           this.addWarning(
             `Encountered lang="${currentLang}" but this language is not defined in the metadata languages (page ${pageNumber}).`
           );
         }
         continue; // go to the next line in the markdown
-      }
-
-      // If the line is some text,  set the currentTextBlock's entry for currentLanguage to the convertMarkdownToHtml(currentText.trim()).
+      } // If the line is some text, accumulate it for the current language
       // Accumulate text for the current language
       if (currentTextBlock && currentLang) {
         currentText += trimmedLine + "\n"; // Accumulate text
-        currentTextBlock.content[currentLang] += this.convertMarkdownToHtml(
-          currentText.trim()
-        ); // Convert accumulated text to HTML
       } else {
         this.addWarning(
           `Found text outside of a language block (page ${pageNumber}): "${trimmedLine}"`
         );
       }
+    } // Finalize any remaining text block
+    if (currentTextBlock && currentLang && currentText.trim()) {
+      currentTextBlock.content[currentLang] = this.convertMarkdownToHtml(
+        currentText.trim()
+      );
     }
-
-    // Finalize any remaining text block
-    if (currentTextBlock && currentLang) {
+    if (currentTextBlock) {
       elements.push(currentTextBlock);
     }
 

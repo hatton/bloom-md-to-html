@@ -1,8 +1,8 @@
-import { readFileSync, writeFileSync, existsSync, unlinkSync } from "fs";
-import { resolve, dirname, basename, extname } from "path";
-import { MarkdownToBloomHtml } from "./md-to-bloom.js";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
+import { basename, dirname, extname, resolve } from "path";
 import { HtmlGenerator } from "./html-generator.js";
-import type { ConversionStats, Book } from "./types.js";
+import { MarkdownToBloomHtml } from "./md-to-bloom.js";
+import type { Book, ConversionStats } from "./types.js";
 
 export class BloomConverter {
   private templates: HtmlGenerator;
@@ -80,13 +80,16 @@ export class BloomConverter {
 
     // Count languages, images, and layouts
     book.pages.forEach((page) => {
-      // Count languages
-      Object.keys(page.textBlocks).forEach((lang) => languages.add(lang));
-
-      // Count images
-      if (page.image) {
-        imageCount++;
-      }
+      // Count images and languages
+      page.elements.forEach((element) => {
+        if (element.type === "image") {
+          imageCount++;
+        } else if (element.type === "text") {
+          Object.keys(element.content).forEach((lang) => {
+            languages.add(lang);
+          });
+        }
+      });
 
       // Count layouts
       layouts[page.layout] = (layouts[page.layout] || 0) + 1;
