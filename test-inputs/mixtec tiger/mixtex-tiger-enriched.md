@@ -229,3 +229,7 @@ Instituto Lingüístico de Verano, A.C.
 Esta edición consta de 50 ejemplares
 
 ISBN 968-31-0276-X
+
+<!-- page-break -->
+
+![should be image only](image4.png)

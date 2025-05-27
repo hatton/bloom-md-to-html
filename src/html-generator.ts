@@ -2,6 +2,13 @@ import escapeHtml from "escape-html";
 import { mapLicense } from "./licenses.js";
 import type { Book, BookMetadata, PageContent } from "./types.js";
 
+// I'm not totally clear how this works in bloom, but it seems that if we
+// leave off this class, it defaults to bloom-multilingual, equivalent to the
+// combo-box setting of "Two languages". That is, every translation group
+// will show two editable boxes on the page. Since it is rare to need that, we
+// will always set to monolingual. Note this does not interfere with
+// us making L1 / Image / L2 pages (those are different translation groups).
+const multilingualClass = "bloom-monolingual"; // REVIEW: <----- Does not work, Bloom overwrites this with bloom-multilingual
 export class HtmlGenerator {
   generateHtmlDocument(book: Book): string {
     return `<!doctype html>
@@ -85,9 +92,9 @@ export class HtmlGenerator {
       case "text-top-image-bottom":
         return this.generateTextTopImageBottomPage(page, metadata);
       case "text-image-text":
-        // "V", and "N1" are special placeholders for the first and second languages
+        // "auto", "V", and "N1" are values that can go in the data-default-languages attribute of a translationGroup.
         // We normally use these instead of actual language codes
-        return this.generateImageInMiddlePage(page, metadata, "V", "V");
+        return this.generateImageInMiddlePage(page, metadata, "auto", "auto");
       case "bilingual-text-image-text":
         return this.generateImageInMiddlePage(page, metadata, "V", "N1");
       case "text-only":
@@ -102,7 +109,7 @@ export class HtmlGenerator {
   ): string {
     const imageElement = page.elements.find((el) => el.type === "image");
     const textElement = page.elements.find((el) => el.type === "text");
-    return `    <div class="bloom-page customPage">
+    return `    <div class="bloom-page customPage ${multilingualClass}">
       <div class="marginBox">
         <div class="split-pane horizontal-percent">
           <div class="split-pane-component position-top">
@@ -123,7 +130,7 @@ export class HtmlGenerator {
   ): string {
     const imageElement = page.elements.find((el) => el.type === "image");
     const textElement = page.elements.find((el) => el.type === "text");
-    return `    <div class="bloom-page customPage">
+    return `    <div class="bloom-page customPage  ${multilingualClass}">
       <div class="marginBox">
         <div class="split-pane horizontal-percent">
           <div class="split-pane-component position-top">
@@ -142,19 +149,34 @@ export class HtmlGenerator {
     page: PageContent,
     metadata: BookMetadata
   ): string {
-    const textElement = page.elements.find((el) => el.type === "text");
-    return `<div class="bloom-page customPage">
+    const textGroup = page.elements.find((el) => el.type === "text");
+    // if the textGroup has only the L2 content, we can use a special class
+    if (
+      textGroup &&
+      Object.keys((textGroup as any).content).length === 1 &&
+      metadata.l2 !== undefined &&
+      (textGroup as any).content[metadata.l2] !== undefined
+    ) {
+      return `<div class="bloom-page customPage  ${multilingualClass}">
               <div class="marginBox">
-                ${this.textBlock(
-                  textElement ? (textElement as any).content : {}
-                )}
+                ${
+                  this.textBlock(textGroup ? (textGroup as any).content : {}, [
+                    "N1",
+                  ]) // for some historical reason, N1 is used for the second language
+                }
+              </div>
+            </div>`;
+    } else
+      return `<div class="bloom-page customPage  ${multilingualClass}">
+              <div class="marginBox">
+                ${this.textBlock(textGroup ? (textGroup as any).content : {})}
               </div>
             </div>`;
   }
 
   private generateImageOnlyPage(page: PageContent): string {
     const imageElement = page.elements.find((el) => el.type === "image");
-    return `<div class="bloom-page customPage">
+    return `<div class="bloom-page customPage  ${multilingualClass}">
               <div class="marginBox">
                   ${this.imageBlock(imageElement ? imageElement.src : "")}              </div>
             </div>`;
@@ -195,7 +217,7 @@ export class HtmlGenerator {
     //   metadata
     // );
 
-    return `<div class="bloom-page customPage">
+    return `<div class="bloom-page customPage  ${multilingualClass}">
           <div class="marginBox">
             <div class="split-pane horizontal-percent">
                 <div class="split-pane-component position-top" >
@@ -273,8 +295,10 @@ export class HtmlGenerator {
     const defLangsAttr = translationGroupDefaultLangVariables
       ? ` data-default-languages="${translationGroupDefaultLangVariables.join(",")}"`
       : "";
-    return `<div class="bloom-translationGroup"${defLangsAttr}>
-      ${bloomEditableDivs.join("\n")}
-      </div>`;
+    return `<div class="split-pane-component-inner">
+              <div class="bloom-translationGroup"${defLangsAttr}>
+                ${bloomEditableDivs.join("\n")}
+              </div>
+            </div>`;
   }
 }

@@ -275,6 +275,24 @@ describe("HtmlTemplates", () => {
     // expect(html).toContain("split-pane-component-inner"); // This assertion might be too specific
   });
 
+  it("should generate text only for l2 only", () => {
+    const page: PageContent = {
+      layout: "text-only",
+      elements: [{ type: "text", content: { es: "some spanish text" } }],
+    };
+
+    const book: Book = {
+      metadata: mockMetadata,
+      pages: [page],
+    };
+
+    const html = templates.generateHtmlDocument(book);
+
+    expect(html).toContain(
+      'div class="bloom-translationGroup" data-default-languages="N1"'
+    );
+  });
+
   it("should generate bilingual-text-image-text page layout correctly", () => {
     const bilingualTextImageTextPage: PageContent = {
       layout: "bilingual-text-image-text",
