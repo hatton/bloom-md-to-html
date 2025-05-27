@@ -157,13 +157,13 @@ export class MarkdownToBloomHtml {
             );
           }
         }
-        continue;
+        continue; // go to the next line in the markdown
       }
 
       // Check for language blocks
       const langMatch = trimmedLine.match(/<!-- lang=([a-z]{2,3}) -->/);
       if (langMatch) {
-        const newLang = langMatch[1];
+        currentLang = langMatch[1];
 
         // 1) if currentTextBlock not null and already has a currentLang for this lang comment, push it to elements and set it to null.
         if (currentTextBlock && currentTextBlock.content[currentLang]) {
@@ -175,7 +175,7 @@ export class MarkdownToBloomHtml {
           currentTextBlock = { type: "text", content: {} };
         }
 
-        currentLang = newLang;
+        currentTextBlock.content[currentLang] = "";
         currentText = "";
 
         if (!metadata.languages[currentLang]) {
@@ -183,13 +183,16 @@ export class MarkdownToBloomHtml {
             `Encountered lang="${currentLang}" but this language is not defined in the metadata languages (page ${pageNumber}).`
           );
         }
-        continue;
+        continue; // go to the next line in the markdown
       }
 
       // If the line is some text,  set the currentTextBlock's entry for currentLanguage to the convertMarkdownToHtml(currentText.trim()).
       // Accumulate text for the current language
       if (currentTextBlock && currentLang) {
         currentText += trimmedLine + "\n"; // Accumulate text
+        currentTextBlock.content[currentLang] += this.convertMarkdownToHtml(
+          currentText.trim()
+        ); // Convert accumulated text to HTML
       } else {
         this.addWarning(
           `Found text outside of a language block (page ${pageNumber}): "${trimmedLine}"`

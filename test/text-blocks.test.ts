@@ -29,7 +29,7 @@ Line two`;
     expect(htmlText).toMatch(/^<p>.*<\/p>$/);
   });
 
-  it("should handle multiple languages correctly", () => {
+  it("should handle multiple languages, unbroken and unrepeated, as a single block", () => {
     const content = `---
 allTitles:
   en: "Test Book"
@@ -66,7 +66,7 @@ Spanish text`;
     expect((result.pages[0].elements[0] as TextBlockElement).content.es).toBe(
       "<p>Spanish text</p>"
     );
-    expect(result.pages[0].elements.length).toBe(3);
+    expect(result.pages[0].elements.length).toBe(1);
   });
 
   it("should handle multiple paragraphs correctly", () => {
@@ -154,7 +154,7 @@ Normal text that should be a paragraph.`;
   it("should handle text after a lang comment and a blank line correctly", () => {
     const content = `---
 allTitles:
-  en: "Test Book"
+  mxa: "Test Book"
 languages:
   mxa: "Mixtec"
 l1: mxa
@@ -167,7 +167,7 @@ l1: mxa
     const parser = new MarkdownToBloomHtml();
     const result = parser.parseMarkdownIntoABookObject(content);
     // Text is on the second page (index 1) after the page break
-    expect((result.pages[0].elements[0] as TextBlockElement).content.en).toBe(
+    expect((result.pages[0].elements[0] as TextBlockElement).content.mxa).toBe(
       "<p>¿Naja jati'íni ndichaun chi'ín? -katí maa ndika'a'.</p>"
     );
     expect(result.pages).toHaveLength(1);
